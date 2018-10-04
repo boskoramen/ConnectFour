@@ -1,3 +1,8 @@
+/**
+ *
+ * @author isaiah.cruz
+ */
+
 public class ConnectFourMachine {
 	
 	private boolean isRedPlayer;

@@ -1,3 +1,8 @@
+/**
+ *
+ * @author isaiah.cruz
+ */
+
 import java.util.ArrayList;
 
 public class Node{

@@ -1,6 +1,7 @@
 /*
-BY ISAIAH CRUZ
-*/
+ *
+ * @author isaiah.cruz
+ */
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;

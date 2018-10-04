@@ -1,3 +1,7 @@
+/**
+ *
+ * @author isaiah.cruz
+ */
 
 import javax.swing.JFrame;
 

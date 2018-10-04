@@ -1,3 +1,8 @@
+/**
+ *
+ * @author isaiah.cruz
+ */
+
 public class Tree {
 		
 		private Node startNode;
