@@ -27,8 +27,33 @@ public class ConnectFourMachine {
 		return lastNode;
 	}
 	
+	public void nextNode(boolean toWin) {
+		if(!toWin) {
+			nextNode();
+		}
+		else {
+			if(getCurrentNode().getVictoryChildren().size() + getCurrentNode().getChildren().size() > 0) {
+				if(getCurrentNode().getVictoryChildren().size() > 0) {
+					int range = getCurrentNode().getVictoryChildren().size();
+					int nextPos = (int)(Math.random() * range);
+					setCurrentNode(getCurrentNode().getVictoryChildren().get(nextPos));
+				}
+				else {
+					int range = getCurrentNode().getChildren().size();
+					int nextPos = (int)(Math.random() * range);
+					setCurrentNode(getCurrentNode().getChildren().get(nextPos));
+				}
+			}
+			else {
+				int range = getCurrentNode().getUncheckedPositions().size();
+				int nextPos = (int)(Math.random() * range);
+				getCurrentNode().addChild(getCurrentNode().getUncheckedPositions().get(nextPos));
+				setCurrentNode(getCurrentNode().getLastChild());
+			}
+		}
+	}
 	
-	public void nextNode(Tree memory) {
+	public void nextNode() {
 		if(getCurrentNode().getUncheckedPositions().size() > 0) {
 			int range = getCurrentNode().getUncheckedPositions().size();
 			int nextPos = (int)(Math.random() * range);
@@ -51,10 +76,11 @@ public class ConnectFourMachine {
 	
 	/*
 	 * Outcomes:
-	 * 1 = someone won
 	 * 0 = draw or continue
+	 * 1 = someone won
+	 * 2 = invalid move
 	 */
-	public void processMove(boolean redPlayer, int outcome, Tree memory) {
+	public void processMove(boolean redPlayer, int outcome) {
 		if(outcome == 2) {
 			currentNode = lastNode;
 			lastNode = currentNode.getParent();

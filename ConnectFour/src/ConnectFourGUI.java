@@ -80,6 +80,7 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	
 	private ConnectFourMachine alphaPlayer;
 	private ConnectFourMachine betaPlayer;
+	private boolean playToWin;
 	
 	private JDialog chooseColors;
 	
@@ -257,6 +258,8 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	    alphaPlayer.setActivation(true);
 	    betaPlayer.setActivation(true);
 	    
+	    playToWin = true;
+	    
 	    memory = new Tree(board);
 	    
 	    pack();
@@ -280,19 +283,16 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	
 	// Implemented, but not used at the moment
 	public void getCode() {
-		recordingFilename = "ConnectFour-";
-	    int num = 0;
-	    num = randomWithRange(1, 9);
-	    recordingFilename +=  num;
-	    
-	    num = randomWithRange(0, 9);
-	    recordingFilename +=  num;
-	    
-	    num = randomWithRange(0, 9);
-	    recordingFilename +=  num;
-	    
-	    recordingFilename += getRandomLetter() + getRandomLetter() + getRandomLetter() + getRandomLetter() + getRandomLetter();
-	    recordingFilename += ".dat";
+		recordingFilename = "ConnectFour-"
+	    					+  randomWithRange(1, 9) 
+	    					+ randomWithRange(0, 9)
+	    					+ randomWithRange(0, 9)
+	    					+ getRandomLetter() 
+	    					+ getRandomLetter() 
+	    					+ getRandomLetter() 
+	    					+ getRandomLetter() 
+	    					+ getRandomLetter()
+	    					+ ".con";
 	}
 	
 	// Utilized by getCode()
@@ -311,8 +311,10 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 		int len = moves.size();
 	    int k;
 	    
-	    try
-	    	{FileWriter writer = new FileWriter(recordingFilename);
+	    try {
+	    	File dir = new File("moves");
+	    	dir.mkdirs();
+	    	FileWriter writer = new FileWriter(new File(dir, recordingFilename));
 	        writer.write(redPlayer + "\n");
 	    	for (k = 0; k < len; k++) {
 	    		writer.write(moves.get(k) + "\n");
@@ -461,16 +463,16 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
         }
 		
         if(alphaPlayer.isActivated()) {
-    		alphaPlayer.processMove(redPlayer, result, memory);
+    		alphaPlayer.processMove(redPlayer, result);
     	}
     	if(betaPlayer.isActivated()) {
-    		betaPlayer.processMove(redPlayer, result, memory);
+    		betaPlayer.processMove(redPlayer, result);
     	}
     	
     	if(finished && (alphaPlayer.getTotalVictories() >= 500 || betaPlayer.getTotalVictories() >= 500)) {
-    		alphaPlayer.setActivation(false);
     		betaPlayer.setActivation(false);
-    		AITimer.stop();
+    		playToWin = true;
+    		AITimer.setDelay(500);
     	}
     	return true;
 	}
@@ -500,7 +502,7 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	}
 	
 	public void playAITurn(ConnectFourMachine AI) {
-		AI.nextNode(memory);
+		AI.nextNode(playToWin);
 		if(!drop(AI.getCurrentNode().getPosition(), redPlayer)) {
 			playAITurn(AI);
 		}
@@ -523,7 +525,11 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	    if(betaPlayer.isActivated()) {
 	    	betaPlayer.newGame(redPlayer, memory);
 	    }
-	    AITimer.start();
+	    
+	    if(betaPlayer.isActivated() && alphaPlayer.isActivated()) {
+	    	AITimer.start();
+	    	System.out.println("yes");
+	    }
 	    repaint();
 	}
 	
@@ -560,6 +566,7 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	    else {
 	    	if(checkAITurn(alphaPlayer) && !animating) {
 	    		playAITurn(alphaPlayer);
+	    		repaint();
 	    	}
 	    	else if(checkAITurn(betaPlayer) && !animating) {
 	    		playAITurn(betaPlayer);
