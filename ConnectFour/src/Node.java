@@ -13,22 +13,29 @@ public class Node{
 		private ArrayList<Node> children;
 		private ArrayList<Node> victoryChildren;
 		private ArrayList<Integer> uncheckedPositions;
+		private final int label;
 		
-		public Node(Node a_parent, int a_position, Board a_board) {
+		private final Tree SOURCE;
+		
+		public Node(Node a_parent, int a_position, Board a_board, Tree a_tree) {
 			parent = a_parent;
 			position = a_position;
 			board = a_board;
 			
-			children = new ArrayList();
-			victoryChildren = new ArrayList();
-			uncheckedPositions = new ArrayList();
+			children = new ArrayList<Node>();
+			victoryChildren = new ArrayList<Node>();
+			uncheckedPositions = new ArrayList<Integer>();
 			
 			for(int i = 0; i < board.getXSIZE(); i++) {
 				uncheckedPositions.add(i);
 			}
+			
+			SOURCE = a_tree;
+			label = SOURCE.count;
 		}
 		public void addChild(int position) {
-			Node child = new Node(this, position, board);
+			Node child = new Node(this, position, board, SOURCE);
+			SOURCE.count++;
 			children.add(child);
 			lastChild = child;
 			uncheckedPositions.remove((Integer) position);
@@ -40,6 +47,9 @@ public class Node{
 		}
 		public void addVictoryChild(Node node) {
 			victoryChildren.add(node);
+		}
+		public void removeChild(Node node) {
+			children.remove(node);
 		}
 		public int getPosition() {
 			return position;
@@ -58,5 +68,8 @@ public class Node{
 		}
 		public ArrayList<Integer> getUncheckedPositions() {
 			return uncheckedPositions;
+		}
+		public int getLabel() {
+			return label;
 		}
 	}
