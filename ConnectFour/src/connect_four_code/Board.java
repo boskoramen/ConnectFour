@@ -1,31 +1,40 @@
+package connect_four_code;
 /*
  *
  * @author isaiah.cruz
  */
+
 public class Board {
-private final int XSIZE = 7;
-private final int YSIZE = 6;
-private final int SCALE = 50;
-
-private GamePiece[][] pieces = new GamePiece[XSIZE][YSIZE];
-
-private int lastX;
-private int lastY;
-
-private final boolean DEBUG;
-
-	public Board(boolean debug) {
+	private final int XSIZE = 7;
+	private final int YSIZE = 6;
+	private final int SCALE = 50;
+	
+	private GamePiece[][] pieces = new GamePiece[XSIZE][YSIZE];
+	
+	private int lastX;
+	private int lastY;
+	
+	public Board() {
 		for(int k = 0; k < pieces.length; k++) {
 			for(int j = 0; j < pieces[k].length; j++) {
 				pieces[k][j] = null;
 	        }
 	    }
-		DEBUG = debug;
 	}
 	
-	public int addPiece(int xPos, boolean isRed) {
+	/*
+	 * Adds a game piece for player of isRed (true = player 1; false = player 2) 
+	 * and simulates dropping a piece in Connect Four at position @xPos. 
+	 * Checks whether it is a valid position to drop a piece and, 
+	 * if the position is valid, whether it led to a win or loss
+	 * 
+	 * @param	xPos	The position on the board (0 to 6) where you are dropping the Connect Four Game Piece
+	 * @param	isRed	Indicates whether it is currently the player 1's turn 
+	 * @return			2 if position is invalid, 1 if the person dropping the piece won, and 0 if the piece was dropped but the player dropping the piece did not win
+	 */
+	public boolean addPiece(int xPos, boolean isRed) {
 		if(pieces[xPos][0] != null) {
-			return 2;
+			return false;
 		}
 	    else {
 	        for(int j = YSIZE - 1; j >= 0; j--) {
@@ -37,12 +46,19 @@ private final boolean DEBUG;
 	                }                
 	            }
         }
-	    if(checkWinner(isRed))
-	        return 1;
-	    return 0;
+	    return true;
 	    }
 	
-	//Used for cloning
+	/*
+	 * Adds a game piece for player of isRed (true = player 1; false = player 2)
+	 * at a position (@xPos, @yPos) of the board.
+	 * <p>
+	 * Meant to be used for the cloning method
+	 * 
+	 * @param	xPos	The position on the x-axis of the board (0 to 6) where you are placing the Connect Four Game Piece
+	 * @param	yPos	The position on the y-axis of the board (0 to 6) where you are placing the Connect Four Game Piece
+	 * @param	isRed	The position on the board board (0 to 6) where you are placing the Connect Four Game Piece
+	 */
 	public void addPiece(int xPos, int yPos, boolean isRed) {
 		pieces[xPos][yPos] = new GamePiece(isRed);
 	    }
@@ -56,7 +72,7 @@ private final boolean DEBUG;
 	    }
 	
 	public Board clone(boolean debug) {
-		Board tempBoard = new Board(debug);
+		Board tempBoard = new Board();
 		for(int k = 0; k < pieces.length; k++) {
 			for(int j = 0; j < pieces[k].length; j++) {
 		    	if(pieces[k][j] != null) {

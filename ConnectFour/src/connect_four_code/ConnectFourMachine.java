@@ -1,3 +1,7 @@
+package connect_four_code;
+import game_framework.Node;
+import game_framework.Tree;
+
 /**
  *
  * @author isaiah.cruz
@@ -5,16 +9,15 @@
 
 public class ConnectFourMachine {
 	
-	private boolean isRedPlayer;
+	private boolean isFirstPlayer;
 	private Node currentNode;
 	private Node lastNode;
 	private boolean activated;
 	private int totalVictories;
 	private Board board;
-	private int randMoveCount = 0;
 	
 	public ConnectFourMachine(Board a_board, boolean redPlayer, Tree a_tree) {
-		isRedPlayer = redPlayer;
+		isFirstPlayer = redPlayer;
 		totalVictories = 0;
 		board = a_board;
 	}
@@ -32,22 +35,23 @@ public class ConnectFourMachine {
 		return lastNode;
 	}
 	
-	public void nextNode(boolean toWin, boolean isRed) {
-		int logicalPos = logicalPosition(isRed);
+	public void nextNode(boolean toWin, boolean isFirstPlayerTurn) {
+		int logicalPos = logicalPosition(isFirstPlayerTurn);
 		if(logicalPos == -1) {
 			if(toWin) {
 				if(getCurrentNode().getVictoryChildren().size() + getCurrentNode().getChildren().size() > 0) {
 					nextKnownNode();
 				}
 				else {
-					nextUnknownNode(isRed);
+					nextUnknownNode();
 				}
 			}
 			else {
 				if(getCurrentNode().getUncheckedPositions().size() > 0) {
-					nextUnknownNode(isRed);
+					nextUnknownNode();
 				}
 				else {
+					System.out.println("not random");
 					nextKnownNode();
 				}
 			}
@@ -58,13 +62,11 @@ public class ConnectFourMachine {
 		}
 	}
 	
-	public void nextUnknownNode(boolean isRed) {
+	public void nextUnknownNode() {
 		int range = getCurrentNode().getUncheckedPositions().size();
 		int nextPos = (int)(Math.random() * range);
 		getCurrentNode().addChild(getCurrentNode().getUncheckedPositions().get(nextPos));
 		setCurrentNode(getCurrentNode().getLastChild());
-		randMoveCount++;
-		System.out.println("Random move: " + randMoveCount);
 	}
 	
 	public void nextKnownNode() {
@@ -80,24 +82,26 @@ public class ConnectFourMachine {
 		}
 	}
 	
-	public int logicalPosition(boolean isRed) {
+	public int logicalPosition(boolean isFirstPlayerTurn) {
+		int losePosition = -1;
 		for(int i = 0; i < board.getXSIZE(); i++) {
 			Board tempBoard = board.clone(false);
-			int outcome = tempBoard.addPiece(i, isRedPlayer);
-			if(outcome == 1 && !(isRed^isRedPlayer)) {
-				return i;
-			}
-			else {
-				if(outcome != 2) {
-					tempBoard.undo();
-				}
-				outcome = tempBoard.addPiece(i, !isRedPlayer);
-				if(outcome == 1 && !(isRed^isRedPlayer)) {
+			if(tempBoard.addPiece(i, isFirstPlayer)) { 
+				boolean hasWinner = board.checkWinner(isFirstPlayerTurn);
+				if(hasWinner && !(isFirstPlayerTurn^isFirstPlayer)) {
 					return i;
+				}
+				else {
+					tempBoard.undo();
+					tempBoard.addPiece(i, !isFirstPlayer);
+					hasWinner = board.checkWinner(isFirstPlayerTurn);
+					if(hasWinner && !(isFirstPlayerTurn^isFirstPlayer)) {
+						losePosition = i;
+					}
 				}
 			}
 		}
-		return -1;
+		return losePosition;
 	}
 	
 	/*
@@ -106,9 +110,14 @@ public class ConnectFourMachine {
 	 * 1 = someone won
 	 * 2 = invalid move
 	 */
-	public void processMove(boolean redPlayer, int outcome) {
-		if(!(isRedPlayer^redPlayer)) { // Checks if the AI is the current player when processMove was called
-			if(outcome == 1) {
+	public void processMove(boolean isFirstPlayerTurn, boolean validDrop, boolean outcome) {
+		if(!(isFirstPlayer^isFirstPlayerTurn)) { // Checks if the AI is the current player when processMove was called
+			if(!validDrop) {
+				lastNode.removeChild(currentNode);
+				currentNode = lastNode;
+				lastNode = currentNode.getParent();
+			}
+			else if(outcome) {
 				Node currentTempNode = getCurrentNode();
 				Node lastTempNode = getLastNode();
 				while(lastTempNode.getParent() != null) {
@@ -118,25 +127,20 @@ public class ConnectFourMachine {
 				}
 				totalVictories = currentTempNode.getVictoryChildren().size();
 			}
-			else if(outcome == 0) {
+			else if(!outcome) {
 				getLastNode().addChild(getCurrentNode());
-			}
-			else if(outcome == 2) {
-				lastNode.removeChild(currentNode);
-				currentNode = lastNode;
-				lastNode = currentNode.getParent();
 			}
 		}
 		else {
-			if(outcome == 0) {
+			if(!outcome) {
 				getLastNode().addChild(getCurrentNode());
 			}
 		}
 	}
 	
-	public void newGame(boolean redPlayer, Tree memory) {
+	public void newGame(boolean isFirstPlayerTurn, Tree memory) {
 		currentNode = memory.getStartNode();
-		if(!isRedPlayer^redPlayer) {
+		if(!isFirstPlayer^isFirstPlayerTurn) {
 			setCurrentNode(getCurrentNode().getChildren().get(0));
 		}
 		else {
@@ -148,8 +152,8 @@ public class ConnectFourMachine {
 		return totalVictories;
 	}
 	
-	public boolean isCurrentPlayer(boolean redPlayer) {
-		return !(isRedPlayer^redPlayer);
+	public boolean isCurrentPlayer(boolean isFirstPlayerTurn) {
+		return !(isFirstPlayer^isFirstPlayerTurn);
 	}
 	
 	public void setActivation(boolean activate) {

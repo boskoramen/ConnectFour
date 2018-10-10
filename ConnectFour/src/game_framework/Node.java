@@ -3,7 +3,11 @@
  * @author isaiah.cruz
  */
 
+package game_framework;
+
 import java.util.ArrayList;
+
+import connect_four_code.Board;
 
 public class Node{
 		private Node parent;
@@ -13,11 +17,9 @@ public class Node{
 		private ArrayList<Node> children;
 		private ArrayList<Node> victoryChildren;
 		private ArrayList<Integer> uncheckedPositions;
-		private final int label;
+		private final int tier;
 		
-		private final Tree SOURCE;
-		
-		public Node(Node a_parent, int a_position, Board a_board, Tree a_tree) {
+		public Node(Node a_parent, int a_position, Board a_board, int a_tier) {
 			parent = a_parent;
 			position = a_position;
 			board = a_board;
@@ -30,12 +32,10 @@ public class Node{
 				uncheckedPositions.add(i);
 			}
 			
-			SOURCE = a_tree;
-			label = SOURCE.count;
+			tier = a_tier;
 		}
 		public void addChild(int position) {
-			Node child = new Node(this, position, board, SOURCE);
-			SOURCE.count++;
+			Node child = new Node(this, position, board, tier + 1);
 			children.add(child);
 			lastChild = child;
 			uncheckedPositions.remove((Integer) position);
@@ -69,7 +69,7 @@ public class Node{
 		public ArrayList<Integer> getUncheckedPositions() {
 			return uncheckedPositions;
 		}
-		public int getLabel() {
-			return label;
+		public int getTier() {
+			return tier;
 		}
 	}

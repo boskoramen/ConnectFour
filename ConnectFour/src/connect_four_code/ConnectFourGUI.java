@@ -1,3 +1,4 @@
+package connect_four_code;
 /*
  *
  * @author isaiah.cruz
@@ -26,6 +27,8 @@ import java.util.Map;
 
 import javax.swing.JOptionPane;
 
+import game_framework.Tree;
+
 public class ConnectFourGUI extends JFrame implements ActionListener {
     
 	final File file = new File(ConnectFourGUI.class.getProtectionDomain().getCodeSource().getLocation().getPath());
@@ -50,7 +53,7 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	private int currentSpeedSetting;
 	private int[] settingNums;
 	
-	private boolean isRedPlayer;
+	private boolean isFirstPlayerTurn;
 	private boolean finished;
 	private boolean[] arrowLocs;
 	private int currentArrowLoc;
@@ -66,7 +69,7 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	private final int GRID_OFFSET = 51;
 	
 	private final int BUTTON_BOARD_DIST = 30;
-	private final int BUTTON_DIST = 150 + BUTTON_BOARD_DIST;
+	private final int BUTTON_DIST = 180;
 	
 	private boolean animating = false;
 	
@@ -95,16 +98,13 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	private boolean firstPlayerNameChanged;
 	private boolean secondPlayerNameChanged;
 	
-	private boolean isFirstPlayer = true;
-	
 	private static Tree memory;
 	
 	private Timer pieceTimer;
 	private Timer AITimer;
 	
 	public ConnectFourGUI() {
-		board = new Board(false);
-	    init();
+		init();
 	    repaint();
 	}
 	
@@ -113,6 +113,8 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 			System.out.println("File path: " + file);
 		}
 	    
+		board = new Board();
+		
 	    inside = new InsidePanel();
 	    outside = new OutsidePanel();
 	    
@@ -252,8 +254,8 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	    secondPlayerColor = Color.black;
 	    secondPlayerColorName = "black";
 	    
-	    alphaPlayer = new ConnectFourMachine(board, isRedPlayer, memory);
-	    betaPlayer = new ConnectFourMachine(board, !isRedPlayer, memory);
+	    alphaPlayer = new ConnectFourMachine(board, isFirstPlayerTurn, memory);
+	    betaPlayer = new ConnectFourMachine(board, !isFirstPlayerTurn, memory);
 	    
 	    alphaPlayer.setActivation(true);
 	    betaPlayer.setActivation(true);
@@ -315,7 +317,7 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	    	File dir = new File("moves");
 	    	dir.mkdirs();
 	    	FileWriter writer = new FileWriter(new File(dir, recordingFilename));
-	        writer.write(isRedPlayer + "\n");
+	        writer.write(isFirstPlayerTurn + "\n");
 	    	for (k = 0; k < len; k++) {
 	    		writer.write(moves.get(k) + "\n");
 	        }
@@ -404,9 +406,10 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	    }
 	}
 	
-	public void drop(int xpos, boolean isRed) {
-		int result = board.addPiece(xpos, isRed);
-		if(result == 2) {
+	public void drop(int xpos, boolean isFirstPlayer) {
+		boolean validDrop = board.addPiece(xpos, isFirstPlayer);
+		boolean outcome = false;
+		if(!validDrop) {
         	if(!checkAITurn(alphaPlayer) && !checkAITurn(betaPlayer)) {
         		JOptionPane.showMessageDialog(null, "There is no more space in this column!", "Hey!", JOptionPane.ERROR_MESSAGE);
         	}
@@ -416,10 +419,11 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
             newY = board.getLastY();
             moves.add(xpos);
             repaint();
+            outcome = board.checkWinner(isFirstPlayer);
             
-			if(result == 1) {
+			if(outcome) {
 	        	String msg = "";
-	            if(isRedPlayer) {
+	            if(isFirstPlayerTurn) {
 	            	if(!firstPlayerNameChanged) {
 	                    msg += "The "+ firstPlayerColorName +" player won";
 	            	}
@@ -456,16 +460,16 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	            repaint();
 	        }   
 	        if(!finished) {
-	        	if(isRedPlayer) isRedPlayer = false;
-	            else isRedPlayer = true;
+	        	if(isFirstPlayerTurn) isFirstPlayerTurn = false;
+	            else isFirstPlayerTurn = true;
 	        }
         }
 		
         if(alphaPlayer.isActivated()) {
-    		alphaPlayer.processMove(isRedPlayer, result);
+    		alphaPlayer.processMove(isFirstPlayerTurn, validDrop, outcome);
     	}
     	if(betaPlayer.isActivated()) {
-    		betaPlayer.processMove(isRedPlayer, result);
+    		betaPlayer.processMove(isFirstPlayerTurn, validDrop, outcome);
     	}
     	 
     	if(finished && (alphaPlayer.getTotalVictories() >= 1000 || betaPlayer.getTotalVictories() >= 1000)) {
@@ -492,7 +496,7 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	}
 	
 	public boolean checkAITurn(ConnectFourMachine AI) {
-		if(AI.isCurrentPlayer(isRedPlayer) && AI.isActivated() && !finished) {
+		if(AI.isCurrentPlayer(isFirstPlayerTurn) && AI.isActivated() && !finished) {
 	    	return true;
 	    }
 	    else {
@@ -501,26 +505,26 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	}
 	
 	public void playAITurn(ConnectFourMachine AI) {
-		AI.nextNode(playToWin, isRedPlayer);
-		drop(AI.getCurrentNode().getPosition(), isRedPlayer);
+		AI.nextNode(playToWin, isFirstPlayerTurn);
+		drop(AI.getCurrentNode().getPosition(), isFirstPlayerTurn);
 	}
 	
 	public void startGame() {
 		if(randomWithRange(0, 1) == 0) {
-			isRedPlayer = true;
+			isFirstPlayerTurn = true;
 		}
 	    else {
-	    	isRedPlayer = false;
+	    	isFirstPlayerTurn = false;
 		}
 	    finished = false;
 	    board.clearBoard();
 	    getCode();
 	    moves.clear();
 	    if(alphaPlayer.isActivated()) {
-	    	alphaPlayer.newGame(isRedPlayer, memory);
+	    	alphaPlayer.newGame(isFirstPlayerTurn, memory);
 	    }
 	    if(betaPlayer.isActivated()) {
-	    	betaPlayer.newGame(isRedPlayer, memory);
+	    	betaPlayer.newGame(isFirstPlayerTurn, memory);
 	    }
 	    
 	    if(betaPlayer.isActivated() && alphaPlayer.isActivated()) {
@@ -587,7 +591,7 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	                        	for(int j = 0; j < board.getPieces()[k].length; j++) {
 	                        		if(e.getSource().equals(pieces[k][j])) {
 	                        			if(!checkAITurn(alphaPlayer) && !checkAITurn(betaPlayer)) {
-	                        				drop(k, isRedPlayer);
+	                        				drop(k, isFirstPlayerTurn);
 	                        			}
 	                        			break;
 	                                }
@@ -659,7 +663,7 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	                }
 	                else {
 	                	if(!checkAITurn(alphaPlayer) && !checkAITurn(betaPlayer)) {
-	                		drop(currentArrowLoc, isRedPlayer);
+	                		drop(currentArrowLoc, isFirstPlayerTurn);
 	                	}
 	                }
 	            }
@@ -823,13 +827,13 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 		    String player = "";
 		    if(!finished) prefix += "Turn: \n";
 		    else prefix += "Winner: \n";
-		    if(isRedPlayer) player += "\n Player 1 | " + firstPlayerColorName.toUpperCase();
+		    if(isFirstPlayerTurn) player += "\n Player 1 | " + firstPlayerColorName.toUpperCase();
 		    else player += "\nPlayer 2 | " + secondPlayerColorName.toUpperCase();
 		    
 		    g2D.setColor(Color.black);
 		    g2D.setFont(new Font("TimesRoman", Font.PLAIN, 20)); 
 		    g2D.drawString(prefix, turnOrWinner.getX(), turnOrWinner.getY());
-		    if(isRedPlayer) g2D.setColor(firstPlayerColor);
+		    if(isFirstPlayerTurn) g2D.setColor(firstPlayerColor);
 		    else g2D.setColor(secondPlayerColor);
 		    g2D.setFont(new Font("TimesRoman", Font.PLAIN, 30)); 
 		    g2D.setStroke(stroke);
@@ -929,19 +933,19 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 		    }
 		}
 	
-	private class ColorLabelListener implements MouseListener {
-	            
+		private class ColorLabelListener implements MouseListener {
+	            private boolean isFirstPlayerPickingColor = false;
 	            // Checks when mouse is clicked for the "choose colors" pop-up
 	            public void mouseClicked(MouseEvent e) {
 	            	for(int k = 0; k < colors.length; k++) {
 	            		for(int j = 0; j < colors[k].length; j++) {
 	            			if(e.getSource().equals(colors[k][j])) {
-	            				if(isFirstPlayer) {
+	            				if(isFirstPlayerPickingColor) {
 	            					firstPlayerColor = colors[k][j].getColor();
 	                                if(!firstPlayerNameChanged) {
 	                                	firstPlayerColorName = colors[k][j].getColorName();
 	                                }
-	                                isFirstPlayer = !isFirstPlayer;
+	                                isFirstPlayerPickingColor = !isFirstPlayerPickingColor;
 	                                if(!finished) {
 	                                	repaint();
 	                                }
@@ -953,7 +957,7 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	                                    if(!secondPlayerNameChanged) {
 	                                    	secondPlayerColorName = colors[k][j].getColorName();
 	                                    }
-	                                    isFirstPlayer = !isFirstPlayer;
+	                                    isFirstPlayerPickingColor = !isFirstPlayerPickingColor;
 	                                    if(!finished) {
 	                                    	outside.repaint();
 	                                    	inside.repaint();
@@ -984,7 +988,7 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	            // Not used
 	            public void mousePressed(MouseEvent e) {
 	            }
-	}
+		}
 	}// end of ColorPanel
 	
 	
