@@ -1,4 +1,4 @@
-package connect_four_code;
+package game_framework;
 /*
  *
  * @author isaiah.cruz
@@ -9,7 +9,7 @@ public class Board {
 	private final int YSIZE = 6;
 	private final int SCALE = 50;
 	
-	private GamePiece[][] pieces = new GamePiece[XSIZE][YSIZE];
+	private ConnectFourPiece[][] pieces = new ConnectFourPiece[XSIZE][YSIZE];
 	
 	private int lastX;
 	private int lastY;
@@ -39,7 +39,7 @@ public class Board {
 	    else {
 	        for(int j = YSIZE - 1; j >= 0; j--) {
 	        	if(pieces[xPos][j] == null) {
-	        		pieces[xPos][j] = new GamePiece(isRed);
+	        		pieces[xPos][j] = new ConnectFourPiece(isRed);
 	                lastX = xPos;
 	                lastY = j;
 	                j = -1;
@@ -59,8 +59,12 @@ public class Board {
 	 * @param	yPos	The position on the y-axis of the board (0 to 6) where you are placing the Connect Four Game Piece
 	 * @param	isRed	The position on the board board (0 to 6) where you are placing the Connect Four Game Piece
 	 */
-	public void addPiece(int xPos, int yPos, boolean isRed) {
-		pieces[xPos][yPos] = new GamePiece(isRed);
+	public boolean addPiece(int xPos, int yPos, boolean isRed) {
+		if(pieces[xPos][yPos] != null) {
+			return false;
+		}
+		pieces[xPos][yPos] = new ConnectFourPiece(isRed);
+		return true;
 	    }
 	
 	public void clearBoard()
@@ -228,11 +232,11 @@ public class Board {
 		return lastY;
     }
 	
-	public GamePiece[][] getPieces() {
+	public ConnectFourPiece[][] getPieces() {
 		return pieces;
     }
 	
-	public GamePiece getPiece(int x, int y) {
+	public ConnectFourPiece getPiece(int x, int y) {
 		return pieces[x][y];
     }
 	

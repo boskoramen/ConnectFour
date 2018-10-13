@@ -1,12 +1,14 @@
-package connect_four_code;
 /**
  *
  * @author isaiah.cruz
  */
-public class GamePiece {
+
+package game_framework;
+
+public class ConnectFourPiece {
 private boolean isRed = false;
 
-public GamePiece(boolean red) {
+public ConnectFourPiece(boolean red) {
 	if(red) 
         isRed = true;
     }

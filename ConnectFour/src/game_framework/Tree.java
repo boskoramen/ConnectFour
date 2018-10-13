@@ -1,22 +1,22 @@
-package game_framework;
-import connect_four_code.Board;
-
 /**
  *
  * @author isaiah.cruz
  */
 
-public class Tree {
+package game_framework;
+
+public abstract class Tree<E> {
 		
-		private Node startNode;
+		private Node<E> root;
 		
-		public Tree(Board a_board) {
-			startNode = new Node(null, 0, a_board, 0);
-			startNode.addChild(0);
-			startNode.addChild(1);
+		public Tree() {
+			root = new Node<E> (null, null);
+		}
+		public Tree(E value) {
+			root = new Node<E> (null, value);
 		}
 		
-		public Node getStartNode() {
-			return startNode;
+		public Node<E> getRoot() {
+			return root;
 		}
 	}

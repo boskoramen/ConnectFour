@@ -1,8 +1,9 @@
-package connect_four_code;
 /*
  *
  * @author isaiah.cruz
  */
+
+package connect_four_code;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -27,7 +28,7 @@ import java.util.Map;
 
 import javax.swing.JOptionPane;
 
-import game_framework.Tree;
+import game_framework.*;
 
 public class ConnectFourGUI extends JFrame implements ActionListener {
     
@@ -98,7 +99,7 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	private boolean firstPlayerNameChanged;
 	private boolean secondPlayerNameChanged;
 	
-	private static Tree memory;
+	private static Tree<Move> memory;
 	
 	private Timer pieceTimer;
 	private Timer AITimer;
@@ -171,7 +172,7 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	        arrowLocs[k] = false;
 	        outside.add(arrows[k]);
 	        arrows[k].setBounds(k * SCALE, 0, CELL_WIDTH, CELL_HEIGHT);
-	        String cardImageFileName = "UI/arrow.gif";
+	        String cardImageFileName = "../UI/arrow.gif";
 	        URL imageURL = getClass().getResource(cardImageFileName);
 	        if (imageURL != null) {
 	        	ImageIcon icon = new ImageIcon(imageURL);
@@ -193,7 +194,7 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	    
 	    question = new JLabel();
 	    question.setBounds(outside.getWidth() - 30, 0, 30, 30);
-	    String cardImageFileName = "UI/question.gif";
+	    String cardImageFileName = "../UI/question.gif";
 	        URL questionImageURL = getClass().getResource(cardImageFileName);
 	        if (questionImageURL != null) {
 	        	ImageIcon icon = new ImageIcon(questionImageURL);
@@ -254,15 +255,15 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	    secondPlayerColor = Color.black;
 	    secondPlayerColorName = "black";
 	    
-	    alphaPlayer = new ConnectFourMachine(board, isFirstPlayerTurn, memory);
-	    betaPlayer = new ConnectFourMachine(board, !isFirstPlayerTurn, memory);
+	    alphaPlayer = new ConnectFourMachine(board, isFirstPlayerTurn);
+	    betaPlayer = new ConnectFourMachine(board, !isFirstPlayerTurn);
 	    
 	    alphaPlayer.setActivation(true);
 	    betaPlayer.setActivation(true);
 	    
 	    playToWin = false;
 	    
-	    memory = new Tree(board);
+	    memory = new ConnectFourTree(board);
 	    
 	    pack();
 	    
@@ -472,11 +473,11 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
     		betaPlayer.processMove(isFirstPlayerTurn, validDrop, outcome);
     	}
     	 
-    	if(finished && (alphaPlayer.getTotalVictories() >= 1000 || betaPlayer.getTotalVictories() >= 1000)) {
+    	if(finished && (alphaPlayer.getTotalVictories() >= 1000  || betaPlayer.getTotalVictories() >= 1000)) {
     		betaPlayer.setActivation(false);
     		playToWin = true;
     		AITimer.setDelay(500);
-    		System.out.println("TEST: " + memory.getStartNode().getChildren().get(0).getVictoryChildren().size());
+    		System.out.println("TEST: " + memory.getRoot().getChildren().get(0).getValue().getVictoryMoves().size());
     	}
 	}
 	
@@ -506,7 +507,7 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	
 	public void playAITurn(ConnectFourMachine AI) {
 		AI.nextNode(playToWin, isFirstPlayerTurn);
-		drop(AI.getCurrentNode().getPosition(), isFirstPlayerTurn);
+		drop(AI.getCurrentNode().getValue().getPosition(), isFirstPlayerTurn);
 	}
 	
 	public void startGame() {
