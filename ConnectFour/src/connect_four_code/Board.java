@@ -1,4 +1,4 @@
-package game_framework;
+package connect_four_code;
 /*
  *
  * @author isaiah.cruz

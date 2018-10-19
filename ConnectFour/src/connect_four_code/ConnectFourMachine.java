@@ -13,12 +13,10 @@ public class ConnectFourMachine {
 	private Node<Move> currentNode;
 	private Node<Move> lastNode;
 	private boolean activated;
-	private int totalVictories;
 	private Board board;
 	
 	public ConnectFourMachine(Board a_board, boolean redPlayer) {
 		isFirstPlayer = redPlayer;
-		totalVictories = 0;
 		board = a_board;
 	}
 	
@@ -71,17 +69,27 @@ public class ConnectFourMachine {
 		int losePosition = -1;
 		for(int i = 0; i < board.getXSIZE(); i++) {
 			Board tempBoard = board.clone(false);
-			if(tempBoard.addPiece(i, isFirstPlayer)) { 
-				boolean hasWinner = board.checkWinner(isFirstPlayerTurn);
-				if(hasWinner && !(isFirstPlayerTurn^isFirstPlayer)) {
-					return i;
+			if(tempBoard.addPiece(i, isFirstPlayerTurn)) { 
+				boolean hasWinner = tempBoard.checkWinner(isFirstPlayerTurn);
+				if(hasWinner) {
+					if(!(isFirstPlayerTurn^isFirstPlayer)) {
+						return i;
+					}
+					else {
+						losePosition = i;
+					}
 				}
 				else {
 					tempBoard.undo();
-					tempBoard.addPiece(i, !isFirstPlayer);
-					hasWinner = board.checkWinner(isFirstPlayerTurn);
-					if(hasWinner && !(isFirstPlayerTurn^isFirstPlayer)) {
-						losePosition = i;
+					tempBoard.addPiece(i, !isFirstPlayerTurn);
+					hasWinner = tempBoard.checkWinner(!isFirstPlayerTurn);
+					if(hasWinner) {
+						if(!(isFirstPlayerTurn^isFirstPlayer)) {
+							losePosition = i;
+						}
+						else {
+							return i;
+						}
 					}
 				}
 			}
@@ -105,13 +113,11 @@ public class ConnectFourMachine {
 					nextUnknownNode();
 				}
 				else {
-					System.out.println("not random");
 					nextKnownNode();
 				}
 			}
 		}
 		else {
-			System.out.println("not logical pos");
 			Node<Move> nextNode = new Node<Move>(currentNode, new Move(logicalPos, currentNode.getValue()));
 			currentNode.addChild(nextNode);
 			setCurrentNode(currentNode.getChildren().get(currentNode.getChildren().size() - 1)); //Sets currentNode to the last added child of the last currentNode
@@ -139,7 +145,6 @@ public class ConnectFourMachine {
 					currentTempNode = lastTempNode;
 					lastTempNode = lastTempNode.getParent();
 				}
-				totalVictories = currentTempNode.getValue().getVictoryMoves().size();
 			}
 			else if(!outcome) {
 				getLastNode().addChild(currentNode);
@@ -160,10 +165,6 @@ public class ConnectFourMachine {
 		else {
 			setCurrentNode(currentNode.getChildren().get(1));
 		}
-	}
-	
-	public int getTotalVictories() {
-		return totalVictories;
 	}
 	
 	public boolean isCurrentPlayer(boolean isFirstPlayerTurn) {

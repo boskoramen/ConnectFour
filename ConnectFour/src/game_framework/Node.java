@@ -18,14 +18,14 @@ public class Node<E> {
 		children = new ArrayList<Node<E>>();
 	}
 	
-	public boolean addChild(Node<E> node) {
+	public synchronized boolean addChild(Node<E> node) {
 		if(!children.contains(node)) {
 			children.add(node);
 			return true;
 		}
 		return false;
 	}
-	public boolean removeChild(Node<E> node) {
+	public synchronized boolean removeChild(Node<E> node) {
 		if(!children.contains(node)) {
 			return false;
 		}

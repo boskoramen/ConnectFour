@@ -7,12 +7,15 @@ package game_framework;
 
 import java.util.ArrayList;
 
+import connect_four_code.Board;
+
 public class Move {
 		private Board board;
 		private int position;
 		private ArrayList<Integer> victoryMoves;
 		private ArrayList<Integer> uncheckedMoves;
 		private final int tier;
+		private int numVictoryChildren;
 		
 		public Move(int a_position, Board a_board, int a_tier) {
 			position = a_position;
@@ -20,6 +23,7 @@ public class Move {
 			victoryMoves = new ArrayList<Integer>();
 			uncheckedMoves = new ArrayList<Integer>();
 			tier = a_tier;
+			numVictoryChildren = 0;
 			
 			for(int i = 0; i < board.getXSIZE(); i++) {
 				uncheckedMoves.add(i);
@@ -39,6 +43,7 @@ public class Move {
 		
 		public void addVictoryMove(int position) {
 			victoryMoves.add(position);
+			numVictoryChildren++;
 		}
 		public void removeUncheckedMove(Integer pos) {
 			uncheckedMoves.remove(pos);
@@ -54,5 +59,8 @@ public class Move {
 		}
 		public int getTier() {
 			return tier;
+		}
+		public int getNumVictoryChildren() {
+			return numVictoryChildren;
 		}
 	}

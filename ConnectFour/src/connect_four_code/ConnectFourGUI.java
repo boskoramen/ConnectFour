@@ -15,20 +15,15 @@ import java.awt.Color;
 import java.awt.Dialog;
 import java.awt.FontMetrics;
 import java.net.URL;
-import java.util.ArrayList;
 import java.awt.event.*;
 import java.awt.font.TextAttribute;
 import java.io.File;
 import javax.swing.*;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.JOptionPane;
-
-import game_framework.*;
 
 public class ConnectFourGUI extends JFrame implements ActionListener {
     
@@ -48,20 +43,18 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	private JButton setSpeedButton;
 	private JButton changeColorButton;
 	private JButton renameButton;
+	private JButton AIButton;
 	
 	private JLayeredPane layer;
 	
 	private int currentSpeedSetting;
 	private int[] settingNums;
 	
-	private boolean isFirstPlayerTurn;
-	private boolean finished;
 	private boolean[] arrowLocs;
 	private int currentArrowLoc;
 	
-	private ArrayList<Integer> moves;
-	
 	private Board board;
+	private ConnectFourGame game;
 	
 	private final int SCALE = 50;
 	private final int CELL_WIDTH = SCALE;
@@ -73,49 +66,28 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	private final int BUTTON_DIST = 180;
 	
 	private boolean animating = false;
-	
-	private int newX = 500000;
-	private int newY = 500000;
+	private boolean placed = true;
 	
 	private final boolean DEBUG = false;
 	
-	// To be used in the future for recording (and possibly replaying) steps in a game previously played
-	private String recordingFilename = "";
-	
-	private ConnectFourMachine alphaPlayer;
-	private ConnectFourMachine betaPlayer;
-	private boolean playToWin;
-	
 	private JDialog chooseColors;
-	
 	private ColorLabel[][] colors;
 	
-	private Color firstPlayerColor;
-	private Color secondPlayerColor;
-	
-	private String firstPlayerColorName;
-	private String secondPlayerColorName;
-	
-	private boolean firstPlayerNameChanged;
-	private boolean secondPlayerNameChanged;
-	
-	private static Tree<Move> memory;
-	
 	private Timer pieceTimer;
-	private Timer AITimer;
 	
-	public ConnectFourGUI() {
-		init();
+	public ConnectFourGUI(Board a_board, ConnectFourGame a_game) {
+		init(a_board, a_game);
 	    repaint();
 	}
 	
-	public void init() {
+	public void init(Board a_board, ConnectFourGame a_game) {
 		if(DEBUG) {
 			System.out.println("File path: " + file);
 		}
 	    
-		board = new Board();
-		
+		board = a_board;
+		game = a_game;
+		setVisible(!game.testPhase);
 	    inside = new InsidePanel();
 	    outside = new OutsidePanel();
 	    
@@ -142,15 +114,12 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	    settingNums[1] = 15;
 	    settingNums[2] = 0;
 	    
-	    setVisible(true);
 	    setResizable(false);
 	    
 	    KeyListener listener = new MyKeyListener();
 	    
 	    setTitle("Connect Four");
 	    setSize(board.getWidth() + (BUTTON_BOARD_DIST * 2) + 50, board.getHeight() + 51);
-	    
-	    moves = new ArrayList<Integer>();
 	    
 	    pieces = new JLabel[board.getXSIZE()][board.getYSIZE()];
 	    for(int k = 0; k < pieces.length; k++) {
@@ -225,6 +194,13 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	    renameButton.setBounds(board.getWidth() + BUTTON_BOARD_DIST, 100, 150, 30);
 	    renameButton.addActionListener(this);
 	    
+	    AIButton = new JButton();
+	    AIButton.setText("Add in CPU player(s)");
+	    AIButton.setFocusable(false);
+	    outside.add(AIButton);
+	    AIButton.setBounds(board.getWidth() + BUTTON_BOARD_DIST, 160, 150, 30);
+	    AIButton.addActionListener(this);
+	    
 	    endButton = new JButton();
 	    endButton.setText("Quit");
 	    endButton.setFocusable(false);
@@ -247,25 +223,6 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	    changeColorButton.addActionListener(this);
 	    
 	    pieceTimer = new Timer(settingNums[currentSpeedSetting], inside);
-	    AITimer = new Timer(0 , this);
-	    
-	    firstPlayerColor = Color.red;
-	    firstPlayerColorName = "red";
-	    
-	    secondPlayerColor = Color.black;
-	    secondPlayerColorName = "black";
-	    
-	    alphaPlayer = new ConnectFourMachine(board, isFirstPlayerTurn);
-	    betaPlayer = new ConnectFourMachine(board, !isFirstPlayerTurn);
-	    
-	    alphaPlayer.setActivation(true);
-	    betaPlayer.setActivation(true);
-	    
-	    playToWin = false;
-	    
-	    memory = new ConnectFourTree(board);
-	    
-	    pack();
 	    
 	    layer.add(inside);
 	    layer.add(outside);
@@ -281,52 +238,8 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	    inside.setVisible(true);
 	    outside.setVisible(true);
 	    
-	    startGame();
-	}
-	
-	// Implemented, but not used at the moment
-	public void getCode() {
-		recordingFilename = "ConnectFour-"
-	    					+  randomWithRange(1, 9) 
-	    					+ randomWithRange(0, 9)
-	    					+ randomWithRange(0, 9)
-	    					+ getRandomLetter() 
-	    					+ getRandomLetter() 
-	    					+ getRandomLetter() 
-	    					+ getRandomLetter() 
-	    					+ getRandomLetter()
-	    					+ ".con";
-	}
-	
-	// Utilized by getCode()
-	public String getRandomLetter() {
-		int randomNum = randomWithRange(0, 25);
-		String alphabet = "abcdefghijklmnopqrstuvwxyz";
-	    return alphabet.substring(randomNum, randomNum + 1);
-	}
-	
-	public int randomWithRange(int min, int max) {
-		int range = (max - min) + 1;     
-	    return (int)(Math.random() * range) + min;
-	}
-	
-	public void printMoves() {
-		int len = moves.size();
-	    int k;
-	    
-	    try {
-	    	File dir = new File("moves");
-	    	dir.mkdirs();
-	    	FileWriter writer = new FileWriter(new File(dir, recordingFilename));
-	        writer.write(isFirstPlayerTurn + "\n");
-	    	for (k = 0; k < len; k++) {
-	    		writer.write(moves.get(k) + "\n");
-	        }
-	        writer.close();
-		} 
-	    catch (IOException exception) {
-			System.out.println("Error processing file: " + exception);
-	    }
+	    setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+	    pack();
 	}
 	
 	public void changeColors() {
@@ -341,42 +254,67 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	    chooseColors.setVisible(true);
 	}
 	
+	public void addAI() {
+		Object[] choices = {"First Player", "Second Player", "Both"};
+		int questionOutcome = JOptionPane.showOptionDialog
+				(
+					null, 
+					"Which players do you want to convert to CPUs?", 
+					"Do you want to play with CPUs?", 
+					JOptionPane.YES_NO_OPTION, 
+					JOptionPane.INFORMATION_MESSAGE, 
+					null, 
+					choices, 
+					0
+				);
+		if(questionOutcome == 0) {
+			game.alphaPlayer.setActivation(true);
+		}
+		else if(questionOutcome == 1) {
+			game.betaPlayer.setActivation(true);
+		}
+		else {
+			game.alphaPlayer.setActivation(true);
+			game.betaPlayer.setActivation(true);
+		}
+	}
+	
 	public void changeNames() {
 		Object[] choices = {"Yes", "No"};
-	    boolean done;
-	    var questionOutcome = JOptionPane.showOptionDialog
-	    						(
-		    						null, 
-		    						"Do you want to rename player one?", 
-		    						"Do you want to pick a name?", 
-		    						JOptionPane.YES_NO_OPTION, 
-		    						JOptionPane.INFORMATION_MESSAGE, 
-		    						null, 
-		    						choices, 
-		    						0
-		    					);
-	    if(questionOutcome == 0) {
-	    	firstPlayerNameChanged = true;
-	        done = false;
-	        while(!done) {
-	        	String toChange = JOptionPane.showInputDialog
-	            					(
-	            						null, 
-	            						"What's your name? Maximum of 12 characters."
-	            					);
-	            if(toChange == null)
-	                done = true;
-	            else if(toChange.length() <= 12) {
-	            	firstPlayerColorName = toChange;
-	                done = true;
-	            }
-	        }
-	        if(!finished) {
-	            repaint();
-	        }
-	    }
-	    
-	    questionOutcome = JOptionPane.showOptionDialog
+		int questionOutcome = 1;
+		if(!(game.checkAIActivated() && game.checkAITurn())) {
+			questionOutcome = JOptionPane.showOptionDialog
+			    						(
+				    						null, 
+				    						"Do you want to rename player one?", 
+				    						"Do you want to pick a name?", 
+				    						JOptionPane.YES_NO_OPTION, 
+				    						JOptionPane.INFORMATION_MESSAGE, 
+				    						null, 
+				    						choices, 
+				    						0
+				    					);
+		    if(questionOutcome == 0) {
+		    	while(true) {
+		        	String toChange = JOptionPane.showInputDialog
+		            					(
+		            						null, 
+		            						"What's your name? Maximum of 12 characters."
+		            					);
+		            if(toChange == null)
+		                break;
+		            else if(toChange.length() <= 12) {
+		            	game.getFirstPlayer().setIdentifier("name", toChange);
+		                break;
+		            }
+		        }
+		        if(!game.isFinished()) {
+		            repaint();
+		        }
+		    }
+		}
+		if(!(game.checkAIActivated())) {
+			questionOutcome = JOptionPane.showOptionDialog
 							(
 								null, 
 								"Do you want to rename player two?", 
@@ -387,100 +325,62 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 								choices, 
 								0
 							);
-	    if(questionOutcome == 0) {
-	    	secondPlayerNameChanged = true;
-	        done = false;
-	        while(!done) {
-	        	String toChange = JOptionPane.showInputDialog(null, "What's your name? Maximum of 12 characters.");
-	            if(toChange == null) {
-	                done = true;
-	            }
-	            else if(toChange.length() <= 12)
-	                {secondPlayerColorName = toChange;
-	                done = true;
-	            }
-	        }
-	        
-	        if(!finished) {
-	            repaint();
-	    	}
+		    if(questionOutcome == 0) {
+		    	while(true) {
+		        	String toChange = JOptionPane.showInputDialog(null, "What's your name? Maximum of 12 characters.");
+		            if(toChange == null) {
+		                break;
+		            }
+		            else if(toChange.length() <= 12)
+		                {game.getSecondPlayer().setIdentifier("name", toChange);
+		                break;
+		            }
+		        }
+		        
+		        if(!game.isFinished()) {
+		            repaint();
+		    	}
+		    }
 	    }
 	}
 	
-	public void drop(int xpos, boolean isFirstPlayer) {
-		boolean validDrop = board.addPiece(xpos, isFirstPlayer);
-		boolean outcome = false;
-		if(!validDrop) {
-        	if(!checkAITurn(alphaPlayer) && !checkAITurn(betaPlayer)) {
-        		JOptionPane.showMessageDialog(null, "There is no more space in this column!", "Hey!", JOptionPane.ERROR_MESSAGE);
-        	}
-    	}
-        else {
-        	newX = board.getLastX();
-            newY = board.getLastY();
-            moves.add(xpos);
-            repaint();
-            outcome = board.checkWinner(isFirstPlayer);
-            
-			if(outcome) {
-	        	String msg = "";
-	            if(isFirstPlayerTurn) {
-	            	if(!firstPlayerNameChanged) {
-	                    msg += "The "+ firstPlayerColorName +" player won";
-	            	}
-	                else {
-	                    msg += "The player "+ firstPlayerColorName +" won";
-	                }
-	            }
-	            else {
-	            	if(!secondPlayerNameChanged) {
-	                    msg += "The "+ secondPlayerColorName +" player won";
-	            	}
-	                else {
-	                    msg += "The player "+ secondPlayerColorName +" won";
-	                }
-	            }
-	            if(!checkAITurn(alphaPlayer) && !checkAITurn(betaPlayer)) {
-	            	JOptionPane.showMessageDialog(null, msg, "We have a winner!", JOptionPane.INFORMATION_MESSAGE);
-	            }
-	            finished = true;
-	            if(!DEBUG) {
-	            	printMoves();
-	            }
-	            repaint();
-	        }
-	        else if(board.fullBoardCheck()) {
-	        	String msg = "There is no more space left on the board!";
-	        	if(!checkAITurn(alphaPlayer) && !checkAITurn(betaPlayer)) {
-	        		JOptionPane.showMessageDialog(null, msg, "It's a draw!", JOptionPane.INFORMATION_MESSAGE);
-	        	}
-	            finished = true;
-	            if(!DEBUG) {
-	            	printMoves();
-	            }
-	            repaint();
-	        }   
-	        if(!finished) {
-	        	if(isFirstPlayerTurn) isFirstPlayerTurn = false;
-	            else isFirstPlayerTurn = true;
-	        }
-        }
-		
-        if(alphaPlayer.isActivated()) {
-    		alphaPlayer.processMove(isFirstPlayerTurn, validDrop, outcome);
-    	}
-    	if(betaPlayer.isActivated()) {
-    		betaPlayer.processMove(isFirstPlayerTurn, validDrop, outcome);
-    	}
-    	 
-    	if(finished && (alphaPlayer.getTotalVictories() >= 1000  || betaPlayer.getTotalVictories() >= 1000)) {
-    		betaPlayer.setActivation(false);
-    		playToWin = true;
-    		AITimer.setDelay(500);
-    		System.out.println("TEST: " + memory.getRoot().getChildren().get(0).getValue().getVictoryMoves().size());
-    	}
+
+	public String colorToString(Color colorName) {
+		if(colorName.equals(Color.white)) {
+			return "white";
+		}
+	    else if(colorName.equals(Color.black)) {
+	    	return "black";
+	    }
+	    else if(colorName.equals(Color.red)) {
+	    	return "red";   
+	    }
+	    else if(colorName.equals(Color.green)) {
+	    	return "green";
+	    }
+	    else if(colorName.equals(Color.blue)) {
+	    	return "blue"; 
+	    }
+	    else if(colorName.equals(Color.orange)) {
+	    	return "orange";
+	    }
+	    else if(colorName.equals(Color.yellow)) {
+	    	return "yellow";
+	    }
+	    else if(colorName.equals(Color.magenta)){
+	    	return "magenta";
+	    }
+	    else {
+	    	return null;
+	    }
 	}
 	
+	public void repaint(boolean pieceDropped) {
+		placed = false;
+		repaint();
+	}
+	
+	@Override
 	public void repaint() {
 		inside.repaint();
 		outside.repaint();
@@ -496,44 +396,6 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	    pack();
 	}
 	
-	public boolean checkAITurn(ConnectFourMachine AI) {
-		if(AI.isCurrentPlayer(isFirstPlayerTurn) && AI.isActivated() && !finished) {
-	    	return true;
-	    }
-	    else {
-	    	return false;
-	    }
-	}
-	
-	public void playAITurn(ConnectFourMachine AI) {
-		AI.nextNode(playToWin, isFirstPlayerTurn);
-		drop(AI.getCurrentNode().getValue().getPosition(), isFirstPlayerTurn);
-	}
-	
-	public void startGame() {
-		if(randomWithRange(0, 1) == 0) {
-			isFirstPlayerTurn = true;
-		}
-	    else {
-	    	isFirstPlayerTurn = false;
-		}
-	    finished = false;
-	    board.clearBoard();
-	    getCode();
-	    moves.clear();
-	    if(alphaPlayer.isActivated()) {
-	    	alphaPlayer.newGame(isFirstPlayerTurn, memory);
-	    }
-	    if(betaPlayer.isActivated()) {
-	    	betaPlayer.newGame(isFirstPlayerTurn, memory);
-	    }
-	    
-	    if(betaPlayer.isActivated() && alphaPlayer.isActivated()) {
-	    	AITimer.start();
-	    }
-	    repaint();
-	}
-	
 	// Run the game
 	public void displayGame() {
 	       java.awt.EventQueue.invokeLater(new Runnable() {
@@ -546,7 +408,7 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	// Respond to a button click in the game
 	public void actionPerformed(ActionEvent e) {
 	    if (e.getSource().equals(startGameButton)) {
-	    	startGame();
+	    	game.startGame();
 	    }
 	    else if(e.getSource().equals(endButton)) {
 	    	System.exit(0);
@@ -564,26 +426,20 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	    else if(e.getSource().equals(renameButton)) {
 	    	changeNames();
 	    }
-	    else {
-	    	if(checkAITurn(alphaPlayer) && !animating) {
-	    		playAITurn(alphaPlayer);
-	    		repaint();
-	    	}
-	    	else if(checkAITurn(betaPlayer) && !animating) {
-	    		playAITurn(betaPlayer);
-	    		repaint();
-	    	}
-	    	else if(finished) {
-	    		startGame();
-	    	}
+	    else if(e.getSource().equals(AIButton)) {
+	    	addAI();
 	    }
+	}
+	
+	public boolean isAnimating() {
+		return animating;
 	}
 	
 	private class MyMouseListener implements MouseListener {
 	
 	            // Handle a mouse click on a cell of the board
 	            public void mouseClicked(MouseEvent e) {
-	            	if(!finished) {
+	            	if(!game.isFinished()) {
 	            		if(animating) {
 	            			JOptionPane.showMessageDialog(null, "A piece is dropping!", "Hey!", JOptionPane.ERROR_MESSAGE);
 	                    }
@@ -591,13 +447,14 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	                    	for(int k = 0; k < board.getPieces().length; k++) {
 	                        	for(int j = 0; j < board.getPieces()[k].length; j++) {
 	                        		if(e.getSource().equals(pieces[k][j])) {
-	                        			if(!checkAITurn(alphaPlayer) && !checkAITurn(betaPlayer)) {
-	                        				drop(k, isFirstPlayerTurn);
+	                        			if(!game.checkAITurn()) {
+	                        				game.drop(k, game.isFirstPlayerTurn());
 	                        			}
 	                        			break;
 	                                }
 	                            }
 	                        }
+	                    	repaint();
 	                    }
 	                }
 	                else {
@@ -658,13 +515,13 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 	            repaint();
             }
 	        else if(keyCode == KeyEvent.VK_SPACE || keyCode == KeyEvent.VK_ENTER) {
-	        	if(!finished) {
+	        	if(!game.isFinished()) {
 	        		if(animating) {
 	        			JOptionPane.showMessageDialog(null, "A piece is dropping!", "Hey!", JOptionPane.ERROR_MESSAGE);
 	                }
 	                else {
-	                	if(!checkAITurn(alphaPlayer) && !checkAITurn(betaPlayer)) {
-	                		drop(currentArrowLoc, isFirstPlayerTurn);
+	                	if(!game.checkAITurn()) {
+	                		game.drop(currentArrowLoc, game.isFirstPlayerTurn());
 	                	}
 	                }
 	            }
@@ -707,11 +564,11 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 		    	for(int j = 0; j < board.getPieces()[k].length; j++) {
 		    		g2D.setColor(Color.black);
 		            if(board.getPiece(k, j) != null) {
-		            	Color pieceColor = secondPlayerColor;
-		                if(board.getPiece(k, j).isRed()) {
-		                	pieceColor = firstPlayerColor;
+		            	Color pieceColor = (Color) game.getSecondPlayer().getIdentifier("color");
+		            	if(board.getPiece(k, j).isRed()) {
+		                	pieceColor = (Color) game.getFirstPlayer().getIdentifier("color");
 		                }
-		                if(k != newX || j != newY) {
+		                if(k != board.getLastX() || j != board.getLastY()) {
 		                	g2D.setColor(pieceColor);
 		                    g2D.fillOval((k * SCALE) + 2, (j * SCALE) + 2, CIRCLE_LEN, CIRCLE_LEN);
 		                    g2D.setColor(Color.black);
@@ -736,18 +593,17 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 		                	g2D.drawRect(k * SCALE, j * SCALE, CELL_LEN, CELL_LEN);
 		                }
 		                else {
-		                	Color pieceColor = secondPlayerColor;
+		                	Color pieceColor = (Color) game.getSecondPlayer().getIdentifier("color");
 		                    g2D.setColor(Color.black);
 		                    
 		                    if(board.getPiece(k, j).isRed()) {
-		                    	pieceColor = firstPlayerColor;
+		                    	pieceColor = (Color) game.getFirstPlayer().getIdentifier("color");
 		                    }
 		
-		                    if(k == newX && j == newY) {
+		                    if(k == board.getLastX() && j == board.getLastY()) {
 		                    	g2D.drawRect(k * SCALE, j * SCALE, CELL_LEN, CELL_LEN);
 		                        isRed = board.getPiece(k, j).isRed();
-		                        
-		                        if(currentSpeedSetting == 0 || currentSpeedSetting == 1) {
+		                        if(!placed && (currentSpeedSetting == 0 || currentSpeedSetting == 1)) {
 		                        	animating = true;
 		                            lastX = k;
 		                            lastY = j;
@@ -776,8 +632,12 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 		        g2D.fillOval((lastX * SCALE) + 2, pieceY - 2, CIRCLE_LEN, CIRCLE_LEN);
 		        redrawGrid(g);
 		        paintPieces(g);
-		        if(isRed) g2D.setColor(firstPlayerColor);
-		        else g2D.setColor(secondPlayerColor);
+		        if(isRed) {
+		        	g2D.setColor((Color) game.getFirstPlayer().getIdentifier("color"));
+		        }
+		        else {
+		        	g2D.setColor((Color) game.getSecondPlayer().getIdentifier("color"));
+		        }
 		        g2D.fillOval((lastX * SCALE) + 2, pieceY - 1, CIRCLE_LEN, CIRCLE_LEN);
 		        g2D.setColor(Color.black);
 		        g2D.drawOval((lastX * SCALE) + 2, pieceY - 1, CIRCLE_LEN, CIRCLE_LEN);
@@ -788,9 +648,8 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 		 public void actionPerformed(ActionEvent e) {
 			if(pieceY >= (lastY * SCALE) + 3) {
 				animating = false;
+				placed = true;
 		        pieceY = -27;
-		        newX = 500000000;
-		        newY = 500000000;
 		        pieceTimer.stop();
 		        try {
 		        	Thread.sleep(100);
@@ -826,16 +685,28 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 		    g2D.fillRect(board.getWidth(), 0, this.getWidth() - board.getWidth(), this.getHeight());
 		    String prefix = "";
 		    String player = "";
-		    if(!finished) prefix += "Turn: \n";
-		    else prefix += "Winner: \n";
-		    if(isFirstPlayerTurn) player += "\n Player 1 | " + firstPlayerColorName.toUpperCase();
-		    else player += "\nPlayer 2 | " + secondPlayerColorName.toUpperCase();
+		    if(!game.isFinished()) {
+		    	prefix += "Turn: \n";
+		    }
+		    else {
+		    	prefix += "Winner: \n";
+		    }
+		    if(game.isFirstPlayerTurn()) {
+		    	player += "\nPlayer 1 | " + ((String) game.getFirstPlayer().getIdentifier("name")).toUpperCase();
+		    }
+		    else {
+		    	player += "\nPlayer 2 | " + ((String) game.getSecondPlayer().getIdentifier("name")).toUpperCase();
+		    }
 		    
 		    g2D.setColor(Color.black);
 		    g2D.setFont(new Font("TimesRoman", Font.PLAIN, 20)); 
 		    g2D.drawString(prefix, turnOrWinner.getX(), turnOrWinner.getY());
-		    if(isFirstPlayerTurn) g2D.setColor(firstPlayerColor);
-		    else g2D.setColor(secondPlayerColor);
+		    if(game.isFirstPlayerTurn()) {
+		    	g2D.setColor((Color) game.getFirstPlayer().getIdentifier("color"));
+		    }
+		    else {
+		    	g2D.setColor((Color) game.getSecondPlayer().getIdentifier("color"));
+		    }
 		    g2D.setFont(new Font("TimesRoman", Font.PLAIN, 30)); 
 		    g2D.setStroke(stroke);
 		    g2D.drawString(player, turnOrWinner.getX(), turnOrWinner.getY() + 30);
@@ -852,31 +723,22 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 			labelColor = color;
 		}
 		
-		public String getColorName() {
-			if(labelColor.equals(Color.white)) return "white";
-		    else if(labelColor.equals(Color.black)) return "black";
-		    else if(labelColor.equals(Color.red)) return "red";   
-		    else if(labelColor.equals(Color.green)) return "green";
-		    else if(labelColor.equals(Color.blue)) return "blue"; 
-		    else if(labelColor.equals(Color.orange)) return "orange";
-		    else if(labelColor.equals(Color.yellow)) return "yellow";
-		    else return "magenta";
-		}
-		
 		public Color getColor() {
 			return labelColor;
 		}
 	}// end of ColorLabel
 	
 	private class ColorPanel extends JPanel {
-	
+		private boolean isFirstPlayerPickingColor;
+		
 		public ColorPanel() {
 			init();
 	    }
 	
 		public void init() {
 			colors = new ColorLabel[2][4];
-		    setSize(290, 190);
+		    isFirstPlayerPickingColor = true;
+			setSize(290, 190);
 		    for(int k = 0; k < colors.length; k++) {
 		    	for(int j = 0; j < colors[k].length; j++) {
 		        	if(k == 0 && j == 0) {
@@ -935,31 +797,41 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 		}
 	
 		private class ColorLabelListener implements MouseListener {
-	            private boolean isFirstPlayerPickingColor = false;
 	            // Checks when mouse is clicked for the "choose colors" pop-up
 	            public void mouseClicked(MouseEvent e) {
+	            	String firstPlayerName = (String) game.getFirstPlayer().getIdentifier("name");
+	            	Color firstPlayerColor = (Color) game.getFirstPlayer().getIdentifier("color");
+	            	String secondPlayerName = (String) game.getFirstPlayer().getIdentifier("name");
+	            	Color secondPlayerColor = (Color) game.getFirstPlayer().getIdentifier("color");
+	            	
 	            	for(int k = 0; k < colors.length; k++) {
 	            		for(int j = 0; j < colors[k].length; j++) {
 	            			if(e.getSource().equals(colors[k][j])) {
 	            				if(isFirstPlayerPickingColor) {
-	            					firstPlayerColor = colors[k][j].getColor();
-	                                if(!firstPlayerNameChanged) {
-	                                	firstPlayerColorName = colors[k][j].getColorName();
+	            					System.out.println("cat");
+	            					game.getFirstPlayer().setIdentifier("color", colors[k][j].getColor());
+	                                if(firstPlayerName.equals(colorToString(firstPlayerColor))) {
+	                                	game.getFirstPlayer().setIdentifier("name", colorToString((Color) game.getFirstPlayer().getIdentifier("color")));
 	                                }
+	                                System.out.println("isFirstPlayerPickingColor: " + isFirstPlayerPickingColor);
 	                                isFirstPlayerPickingColor = !isFirstPlayerPickingColor;
-	                                if(!finished) {
+	                                System.out.println("isFirstPlayerPickingColor: " + isFirstPlayerPickingColor);
+	                                if(!game.isFinished()) {
 	                                	repaint();
 	                                }
 	                                chooseColors.setTitle("Pick a color for the second player!");
 	                            }
 	                            else {
 	                            	if(!colors[k][j].getColor().equals(firstPlayerColor)) {
-	                            		secondPlayerColor = colors[k][j].getColor();
-	                                    if(!secondPlayerNameChanged) {
-	                                    	secondPlayerColorName = colors[k][j].getColorName();
-	                                    }
+	                            		System.out.println("dog");
+	                            		game.getSecondPlayer().setIdentifier("color", colors[k][j].getColor());
+		                                if(secondPlayerName.equals(colorToString(secondPlayerColor))) {
+		                                	game.getSecondPlayer().setIdentifier("name", colorToString((Color) game.getSecondPlayer().getIdentifier("color")));
+		                                }
+		                                System.out.println("isFirstPlayerPickingColor: " + isFirstPlayerPickingColor);
 	                                    isFirstPlayerPickingColor = !isFirstPlayerPickingColor;
-	                                    if(!finished) {
+	                                    System.out.println("isFirstPlayerPickingColor: " + isFirstPlayerPickingColor);
+	                                    if(!game.isFinished()) {
 	                                    	outside.repaint();
 	                                    	inside.repaint();
 	                                    }
@@ -1051,7 +923,7 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 		
 		    add(hand);
 		    hand.setBounds(0, 600, 50, 500);
-		    String cardImageFileName_hand = "UI/smaller_hand.gif";
+		    String cardImageFileName_hand = "../UI/smaller_hand.gif";
 		    URL questionImageURL_hand = getClass().getResource(cardImageFileName_hand);
 		    if (questionImageURL_hand != null) {
 		    	ImageIcon icon = new ImageIcon(questionImageURL_hand);
@@ -1063,7 +935,7 @@ public class ConnectFourGUI extends JFrame implements ActionListener {
 		    
 		    add(wasd);
 		    wasd.setBounds(0, 0, 500, 500);
-		    String cardImageFileName_wasd = "UI/wasd.gif";
+		    String cardImageFileName_wasd = "../UI/wasd.gif";
 		    URL questionImageURL_wasd = getClass().getResource(cardImageFileName_wasd);
 		    if (questionImageURL_wasd != null) {
 		    	ImageIcon icon = new ImageIcon(questionImageURL_wasd);

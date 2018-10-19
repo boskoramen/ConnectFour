@@ -3,7 +3,7 @@
  * @author isaiah.cruz
  */
 
-package game_framework;
+package connect_four_code;
 
 public class ConnectFourPiece {
 private boolean isRed = false;
