@@ -8,8 +8,13 @@
             <file>file:/H:/AP%20Computer%20Science/ConnectFour/src/ConnectFourRunner.java</file>
         </group>
         <group>
-            <file>file://msd-share1/shares/Students/Isaiah.Cruz/AP%20Computer%20Science/ConnectFour/src/ConnectFourGUI.java</file>
-            <file>file://msd-share1/shares/Students/Isaiah.Cruz/AP%20Computer%20Science/ConnectFour/src/SendEmail.java</file>
+            <file>file:/C:/Users/Froze/Documents/NetBeansProjects/ConnectFour/ConnectFour/src/connect_four_code/ConnectFourGame.java</file>
+            <file>file:/C:/Users/Froze/Documents/NetBeansProjects/ConnectFour/ConnectFour/src/connect_four_code/ConnectFourRunner.java</file>
+            <file>file:/C:/Users/Froze/Documents/NetBeansProjects/ConnectFour/ConnectFour/src/connect_four_code/Board.java</file>
+            <file>file:/C:/Users/Froze/Documents/NetBeansProjects/ConnectFour/ConnectFour/src/connect_four_code/ConnectFourMachine.java</file>
+            <file>file:/C:/Users/Froze/Documents/NetBeansProjects/ConnectFour/ConnectFour/src/game_framework/Move.java</file>
+            <file>file:/C:/Users/Froze/Documents/NetBeansProjects/ConnectFour/ConnectFour/src/game_framework/AIPlayer.java</file>
+            <file>file:/C:/Users/Froze/Documents/NetBeansProjects/ConnectFour/ConnectFour/src/game_framework/Player.java</file>
         </group>
     </open-files>
 </project-private>

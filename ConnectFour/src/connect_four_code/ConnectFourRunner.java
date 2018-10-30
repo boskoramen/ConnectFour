@@ -26,16 +26,16 @@ public class ConnectFourRunner implements ActionListener{
 			board = new Board();
 			memory = new ConnectFourTree(board);
 			testRuns = new ConnectFourGame[]{
-												new ConnectFourGame(true, memory), 
-												new ConnectFourGame(true, memory), 
-												new ConnectFourGame(true, memory), 
-												new ConnectFourGame(true, memory),
-												new ConnectFourGame(true, memory),
-												new ConnectFourGame(true, memory),
-												new ConnectFourGame(true, memory),
-												new ConnectFourGame(true, memory),
-												new ConnectFourGame(true, memory)
-										 	};
+                                new ConnectFourGame(true, memory), 
+                                new ConnectFourGame(true, memory), 
+                                new ConnectFourGame(true, memory), 
+                                new ConnectFourGame(true, memory),
+                                new ConnectFourGame(true, memory),
+                                new ConnectFourGame(true, memory),
+                                new ConnectFourGame(true, memory),
+                                new ConnectFourGame(true, memory),
+                                new ConnectFourGame(true, memory)
+                            };
 			t = new Timer(0, this);
 			t.start();
 		}

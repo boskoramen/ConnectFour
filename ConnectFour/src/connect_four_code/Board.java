@@ -15,9 +15,9 @@ public class Board {
 	private int lastY;
 	
 	public Board() {
-		for(int k = 0; k < pieces.length; k++) {
-			for(int j = 0; j < pieces[k].length; j++) {
-				pieces[k][j] = null;
+		for(ConnectFourPiece[] k : pieces) {
+			for(ConnectFourPiece j : k) {
+				j = null;
 	        }
 	    }
 	}
@@ -68,40 +68,42 @@ public class Board {
 	    }
 	
 	public void clearBoard()
-	    {for(int k = 0; k < pieces.length; k++)
-	        {for(int j = 0; j < pieces[k].length; j++)
-	            {pieces[k][j] = null;
+	    {for(ConnectFourPiece[] k : pieces)
+	        {for(ConnectFourPiece j : k)
+	            {j = null;
 	            }
 	        }
 	    }
 	
 	public Board clone(boolean debug) {
-		Board tempBoard = new Board();
-		for(int k = 0; k < pieces.length; k++) {
-			for(int j = 0; j < pieces[k].length; j++) {
-		    	if(pieces[k][j] != null) {
-					tempBoard.addPiece(k, j,pieces[k][j].isRed());
-		    	}
-		    }
-		}
-		return tempBoard;
+            Board tempBoard = new Board();
+            for(int k = 0; k < pieces.length; k++) {
+                for(int j = 0; j < pieces[k].length; j++) {
+                    if(pieces[k][j] != null) {
+                        tempBoard.addPiece(k, j, pieces[k][j].isRed());
+                    }
+                }
+            }
+            return tempBoard;
 	}
 	
 	public boolean fullBoardCheck() {
-		for(int k = 0; k < pieces.length; k++) {
-	    	for(int j = 0; j < pieces[k].length; j++) {
-	        	if(pieces[k][j] == null) return false;
+            for(ConnectFourPiece[] k : pieces) {
+                for(ConnectFourPiece j : k) {
+                    if(j == null) {
+                        return false;
+                    }
+                }
             }
-        }
 	    return true;
-    }
+        }
 	
 	public void undo() {
-		pieces[lastX][lastY] = null;
-    }
+            pieces[lastX][lastY] = null;
+        }
 	
 	public boolean checkWinner(boolean redPlayer) {
-		boolean hasWon = false;
+            boolean hasWon = false;
 	    int count = 0;
 	    
 	    //HORIZONTALS
@@ -109,14 +111,14 @@ public class Board {
 	    	int j = lastY;
 	    	if(pieces[k][j] != null && pieces[k][j].isRed() == redPlayer) {
 	        	count++;
-            }
+                }
 	        else {
 	        	count = 0;
 	        }
 	        if(count == 4) {
 	        	return true;
+                }
             }
-        }
 	    
 	    //VERTICALS
 	    if(!hasWon) {
@@ -125,15 +127,15 @@ public class Board {
 	        	int k = lastX;
 	            if(pieces[k][j] != null && pieces[k][j].isRed() == redPlayer) {
 	            	count++;
-                }
+                    }
 	            else {
 	            	count = 0;
 	            }
 	            if(count == 4) {
 	            	return true;
+                    }
                 }
             }
-        }
 	
 	    //DIAGONALS 1
 	    if(!hasWon) {
@@ -146,14 +148,14 @@ public class Board {
 	        int j = lastY;
 	        
 	        while(!done) {
-	        	diagX = k;
+                    diagX = k;
 	            diagY = j;
 	            if(diagY == 0 || diagX == 0 || diagX == XSIZE - 1) {
 	            	done = true;
-                }
+                    }
 	            k--;
 	            j--;
-            }
+                }
 	        
 	        done = false;
 	        
