@@ -15,7 +15,8 @@ public class ConnectFourMachine extends AIPlayer {
     private final Board board;
 
     public ConnectFourMachine(Board a_board, boolean redPlayer) {
-        isFirstPlayer = redPlayer;
+        super();
+    	isFirstPlayer = redPlayer;
         board = a_board;
     }
     

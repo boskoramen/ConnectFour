@@ -31,33 +31,39 @@ public class ConnectFourGame extends Thread implements ActionListener{
 	private boolean stop = false;
 	private static Tree<Move> memory;
 	private final ArrayList<Player> humanPlayers;
-        private final ArrayList<ConnectFourMachine> AIPlayers;
-        private final ArrayList<Player> curPlayerPool;
-        private Player curPlayer;
+    private final ArrayList<ConnectFourMachine> AIPlayers;
+    private final ArrayList<Player> curPlayerPool;
+    private int curPlayerPos;
 	private final Timer AITimer;
 	public ConnectFourGame(boolean isTest, Tree<Move> a_memory) {
-            testPhase = isTest;
-            memory = a_memory;
-            board = new Board();
-            moves = new ArrayList<Integer>();
-            humanPlayers = new ArrayList<Player>();
-            AIPlayers = new ArrayList<ConnectFourMachine>();
-            curPlayerPool = new ArrayList<Player>();
+        testPhase = isTest;
+        memory = a_memory;
+        board = new Board();
+        moves = new ArrayList<Integer>();
+        humanPlayers = new ArrayList<Player>();
+        AIPlayers = new ArrayList<ConnectFourMachine>();
+        curPlayerPool = new ArrayList<Player>();
 	    AITimer = new Timer(0, this);
-            Player firstPlayer = new Player();
-            Player secondPlayer = new Player();
-            firstPlayer.setIdentifier("name", "red");
-            secondPlayer.setIdentifier("name", "black");
-            firstPlayer.setIdentifier("color", Color.red);
-            secondPlayer.setIdentifier("color", Color.black);
-            humanPlayers.add(firstPlayer);
-            humanPlayers.add(secondPlayer);
+        Player firstPlayer = new Player();
+        Player secondPlayer = new Player();
+        firstPlayer.setIdentifier("name", "red");
+        secondPlayer.setIdentifier("name", "black");
+        firstPlayer.setIdentifier("color", Color.red);
+        secondPlayer.setIdentifier("color", Color.black);
+        humanPlayers.add(firstPlayer);
+        humanPlayers.add(secondPlayer);
 	    GUI = new ConnectFourGUI(board, this);
-            ConnectFourMachine alphaPlayer = new ConnectFourMachine(board, isFirstPlayerTurn);
+        ConnectFourMachine alphaPlayer = new ConnectFourMachine(board, isFirstPlayerTurn);
 	    ConnectFourMachine betaPlayer = new ConnectFourMachine(board, !isFirstPlayerTurn);
-            if(testPhase) {
-                curPlayerPool.add(alphaPlayer);
-            }
+        if(testPhase) {
+            curPlayerPool.add(alphaPlayer);
+            curPlayerPool.add(betaPlayer);
+        }
+        else {
+        	curPlayerPool.add(firstPlayer);
+        	curPlayerPool.add(secondPlayer);
+        }
+        curPlayerPos = 0;
 	    startGame();
 	    GUI.repaint();
 	}
@@ -66,12 +72,8 @@ public class ConnectFourGame extends Thread implements ActionListener{
 		return board;
 	}
 	
-	public Player getFirstPlayer() {
-		return firstPlayer;
-	}
-	
-	public Player getSecondPlayer() {
-		return secondPlayer;
+	public Player currentPlayer() {
+		return curPlayerPool.get(0);
 	}
 	
 	public Tree<Move> getMemory() {

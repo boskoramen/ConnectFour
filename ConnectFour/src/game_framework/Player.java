@@ -13,7 +13,7 @@ public class Player {
         
 	public Player() {
 		identifiers = new HashMap<>();
-                playedTurn = false;
+        playedTurn = false;
 	}
 	
 	public void setIdentifier(String key, Object value) {
