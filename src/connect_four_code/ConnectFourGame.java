@@ -18,7 +18,7 @@ import game_framework.*;
 
 public class ConnectFourGame extends Thread implements ActionListener{
 
-    //Private instance variables:
+    //  Private instance variables:
     private ArrayList<Integer> moves;
     private Board board;
     private ConnectFourGUI GUI;
@@ -133,17 +133,24 @@ public class ConnectFourGame extends Thread implements ActionListener{
 	    System.out.println("Error processing file: " + exception);
 	}
     }
-	
-    public void drop(int xpos, boolean isFirstPlayer) {
+
+
+    /*
+     *  Method for attempting to drop a Connect Four piece at position
+     *  xPos.
+     *
+     *  TODO: Rewrite method to accomodate more than two players
+     */
+    public void drop(int xPos, boolean isFirstPlayer) {
 	System.out.println(testPhase);
-	boolean validDrop = board.addPiece(xpos, isFirstPlayer);
+	boolean validDrop = board.addPiece(xPos, isFirstPlayer);
 	boolean outcome = false;
         if(!validDrop) {
             if(!checkAITurn(alphaPlayer) && !checkAITurn(betaPlayer)) {
         	JOptionPane.showMessageDialog(null, "There is no more space in this column!", "Hey!", JOptionPane.ERROR_MESSAGE);
             }
     	} else {
-            moves.add(xpos);
+            moves.add(xPos);
             GUI.repaint(true);
             outcome = board.checkWinner(isFirstPlayer);
 
